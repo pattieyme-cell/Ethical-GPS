@@ -2,9 +2,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { DecisionAnalysis } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
-
 export async function analyzeDecision(dilemma: string): Promise<DecisionAnalysis> {
+  const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
   const response = await ai.models.generateContent({
     model: "gemini-2.5-flash",
     contents: `Analyze the following life dilemma and provide a balanced perspective from Logic, Emotion, and Ethics. 
