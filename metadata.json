@@ -1,0 +1,8 @@
+
+{
+  "name": "EthicsGPS - Your Wise Life Mentor",
+  "description": "An AI-powered decision-making platform that breaks down complex life choices into Logic, Emotion, and Ethics perspectives.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

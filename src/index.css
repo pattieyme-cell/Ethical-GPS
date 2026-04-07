@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+@theme {
+  --color-dark-bg: #0f172a;
+  --color-dark-card: #1e293b;
+  --color-dark-text: #f8fafc;
+  --color-light-bg: #f8fafc;
+  --color-light-card: #ffffff;
+  --color-light-text: #0f172a;
+}
+
+@layer base {
+  body {
+    @apply transition-colors duration-300;
+  }
+  
+  /* Adding base font families */
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+.glass-panel {
+  @apply backdrop-blur-md bg-white/10 dark:bg-black/20 border border-white/20 dark:border-black/30 shadow-xl;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
