@@ -10,10 +10,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.VITE_GEMINI_API_KEY || 'development_secret_key'; // Using the api key just as a random secret fallback if none exists
 
-const db = new sqlite3.Database('./ethical_gps.db', (err) => {
+const DB_PATH = process.env.DB_PATH || './ethical_gps.db';
+const db = new sqlite3.Database(DB_PATH, (err) => {
   if (err) console.error('Database connection error:', err);
   else console.log('Connected to SQLite database.');
 });
