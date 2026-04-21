@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import html2canvas from 'html2canvas';
 import Layout from './components/Layout';
 import AnalysisCard from './components/AnalysisCard';
 import { Login } from './components/Login';
@@ -8,6 +9,8 @@ import { Consequences } from './components/Consequences';
 import { Books } from './components/Books';
 import { Feedback } from './components/Feedback';
 import { Profile } from './components/Profile';
+import { ShareCard } from './components/ShareCard';
+import { MentorChat } from './components/MentorChat';
 import { ViewType, DecisionEntry, DecisionAnalysis } from './types';
 import { analyzeDecision } from './services/geminiService';
 import { useAuth } from './contexts/AuthContext';
@@ -28,6 +31,10 @@ const MainApp: React.FC = () => {
   // Voice state
   const [isRecording, setIsRecording] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+
+  // Sharing state
+  const shareCardRef = useRef<HTMLDivElement>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     if (!isLoading) {
@@ -147,6 +154,24 @@ const MainApp: React.FC = () => {
     
     window.speechSynthesis.speak(utterance);
     setIsSpeaking(true);
+  };
+
+  const handleExportImage = async () => {
+    if (!shareCardRef.current || isExporting) return;
+    setIsExporting(true);
+    try {
+      const canvas = await html2canvas(shareCardRef.current, { backgroundColor: null, scale: 2 });
+      const imageURL = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.href = imageURL;
+      link.download = `EthicsGPS_Insight_${new Date().getTime()}.png`;
+      link.click();
+    } catch (e) {
+      console.error("Failed to export image", e);
+      alert("Failed to create the image. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   if (isLoading) return <div className="min-h-screen flex items-center justify-center dark:bg-slate-900 bg-slate-50"><div className="animate-spin h-8 w-8 text-purple-600 border-4 border-t-white rounded-full"></div></div>;
@@ -337,12 +362,28 @@ const MainApp: React.FC = () => {
                 🔊
               </button>
             </h3>
-            <p className="text-lg text-purple-800 dark:text-purple-100 max-w-3xl mx-auto leading-relaxed italic border-l-4 border-purple-400 pl-4">
+            <p className="text-lg text-purple-800 dark:text-purple-100 max-w-3xl mx-auto leading-relaxed italic border-l-4 border-purple-400 pl-4 mb-8">
               "{currentAnalysis.recommendation}"
             </p>
+            <button
+              onClick={handleExportImage}
+              disabled={isExporting}
+              className="px-6 py-3 bg-indigo-600/10 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 font-bold rounded-xl border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-600/20 dark:hover:bg-indigo-900/50 transition-colors flex items-center gap-2"
+            >
+              {isExporting ? (
+                <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+              )}
+              {isExporting ? "Rendering Image..." : "Export as Image"}
+            </button>
           </div>
         </div>
 
+        <MentorChat dilemma={input} analysis={currentAnalysis} />
+
+        {/* Hidden Share Card */}
+        <ShareCard ref={shareCardRef} input={input} analysis={currentAnalysis} userName={user?.name || user?.email.split('@')[0] || "User"} />
       </div>
     );
   };
@@ -393,8 +434,19 @@ const MainApp: React.FC = () => {
     </div>
   );
 
+  const getEmotionTheme = () => {
+    if (activeView !== ViewType.DASHBOARD || !currentAnalysis) return "neutral";
+    const emotions = currentAnalysis.emotion.primaryEmotions.map(e => e.toLowerCase());
+    if (emotions.some(e => e.includes("anger") || e.includes("frustrat") || e.includes("rage"))) return "anger";
+    if (emotions.some(e => e.includes("anxiet") || e.includes("nervous") || e.includes("fear") || e.includes("worry"))) return "anxiety";
+    if (emotions.some(e => e.includes("joy") || e.includes("happy") || e.includes("hope") || e.includes("excit"))) return "joy";
+    if (emotions.some(e => e.includes("passion") || e.includes("love") || e.includes("desire"))) return "passion";
+    if (emotions.some(e => e.includes("sad") || e.includes("grief") || e.includes("depress") || e.includes("guilt"))) return "sadness";
+    return "neutral";
+  };
+
   return (
-    <Layout activeView={activeView} setActiveView={setActiveView} isAuthenticated={isAuthenticated} onLogout={logout}>
+    <Layout activeView={activeView} setActiveView={setActiveView} isAuthenticated={isAuthenticated} onLogout={logout} emotionTheme={getEmotionTheme()}>
       {activeView === ViewType.LOGIN && <Login onSwitch={() => setActiveView(ViewType.SIGNUP)} onSuccess={() => setHasSeenIntro(false)} />}
       {activeView === ViewType.SIGNUP && <SignUp onSwitch={() => setActiveView(ViewType.LOGIN)} onSuccess={() => setHasSeenIntro(false)} />}
       {activeView === ViewType.INTRO && <Intro onComplete={() => { setHasSeenIntro(true); setActiveView(ViewType.HOME); loadHistory(); }} />}

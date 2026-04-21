@@ -93,3 +93,44 @@ export async function analyzeDecision(dilemma: string): Promise<DecisionAnalysis
     throw new Error("Analysis failed. Please try rephrasing your dilemma.");
   }
 }
+
+export type ChatMessage = { role: "user" | "model"; text: string };
+
+export async function chatWithMentor(dilemma: string, analysis: DecisionAnalysis, history: ChatMessage[], newText: string): Promise<string> {
+  const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
+  
+  const contents = [
+    { 
+      role: "user", 
+      parts: [{ text: `Original Dilemma: "${dilemma}"\nYou previously gave me this advice: "${analysis.recommendation}"` }]
+    },
+    {
+      role: "model",
+      parts: [{ text: "Yes, I remember. How can I help you think through this further?" }]
+    },
+    ...history.map(msg => ({
+      role: msg.role,
+      parts: [{ text: msg.text }]
+    })),
+    {
+      role: "user",
+      parts: [{ text: newText }]
+    }
+  ];
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: contents as any,
+      config: {
+        systemInstruction: "You are the EthicsGPS Mentor. You already provided a structured logical and ethical analysis. The user is now asking follow-up questions. Answer concisely, empathetically, and wisely. Keep responses under 3 paragraphs."
+      }
+    });
+
+    if (!response.text) return "I'm not exactly sure how to answer that.";
+    return response.text;
+  } catch (error) {
+    console.error("Chat failure:", error);
+    throw new Error("Failed to communicate with mentor.");
+  }
+}

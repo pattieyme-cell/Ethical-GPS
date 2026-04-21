@@ -7,9 +7,10 @@ interface LayoutProps {
   setActiveView: (view: ViewType) => void;
   isAuthenticated?: boolean;
   onLogout?: () => void;
+  emotionTheme?: "neutral" | "anger" | "anxiety" | "joy" | "sadness" | "passion";
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, activeView, setActiveView, isAuthenticated, onLogout }) => {
+const Layout: React.FC<LayoutProps> = ({ children, activeView, setActiveView, isAuthenticated, onLogout, emotionTheme = "neutral" }) => {
   const [theme, setTheme] = useState<'light'|'dark'>('dark');
 
   useEffect(() => {
@@ -20,8 +21,17 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, setActiveView, is
     }
   }, [theme]);
 
+  // Determine emotional background overlay classes
+  let emotionBg = "";
+  if (emotionTheme === "anger") emotionBg = "bg-red-500/10 dark:bg-red-900/20";
+  else if (emotionTheme === "anxiety") emotionBg = "bg-teal-500/10 dark:bg-teal-900/20";
+  else if (emotionTheme === "joy") emotionBg = "bg-amber-500/10 dark:bg-amber-900/20";
+  else if (emotionTheme === "sadness") emotionBg = "bg-blue-500/10 dark:bg-blue-900/20";
+  else if (emotionTheme === "passion") emotionBg = "bg-rose-500/10 dark:bg-rose-900/20";
+
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
+    <div className={`min-h-screen flex flex-col bg-slate-50 dark:bg-slate-900 transition-colors duration-700 relative`}>
+      <div className={`absolute inset-0 pointer-events-none transition-colors duration-1000 ${emotionBg}`}></div>
       <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div 
