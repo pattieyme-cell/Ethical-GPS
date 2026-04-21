@@ -85,8 +85,9 @@ const MainApp: React.FC = () => {
       const newEntry = await api.saveDecision(input, result, token);
       setHistory(prev => [newEntry, ...prev]);
       setActiveView(ViewType.DASHBOARD);
-    } catch (error) {
-      alert("Something went wrong with the analysis. Please check your quota or try again later.");
+    } catch (error: any) {
+      console.error(error);
+      alert(`Error during analysis: ${error.message || error}. Please check your quota, backend connection, or try again later.`);
     } finally {
       setIsAnalyzing(false);
     }
